@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/dustin/go-humanize"
 )
@@ -98,6 +100,7 @@ Use -base-url to set the web server base URL (useful when proxying).
 	addr := flag.String("http", "localhost:5001", "HTTP host:port")
 	baseURL := flag.String("base-url", "", "web server base URL")
 	maxImgSizeStr := flag.String("max-image-size", "10MB", "maximum image size")
+	minDelayStr := flag.String("min-delay", "5s", "minimum delay between two records")
 	flag.Parse()
 	if flag.NArg() != 0 {
 		return fmt.Errorf("no argument expected")
@@ -108,6 +111,12 @@ Use -base-url to set the web server base URL (useful when proxying).
 	if err != nil {
 		return err
 	}
+	minDelay, err := time.ParseDuration(*minDelayStr)
+	if err != nil {
+		return err
+	}
+	lastTimeMutex := sync.Mutex{}
+	lastTime := time.Now()
 
 	imgDir := "images"
 	imgURL := *baseURL + "/saved/"
@@ -118,6 +127,20 @@ Use -base-url to set the web server base URL (useful when proxying).
 	http.Handle(imgURL, http.StripPrefix(imgURL,
 		http.FileServer(http.Dir(imgDir))))
 	http.HandleFunc(*baseURL+"/save/", func(w http.ResponseWriter, r *http.Request) {
+		now := time.Now()
+		lastTimeMutex.Lock()
+		last := lastTime
+		lastTimeMutex.Unlock()
+		if now.Sub(last) < minDelay {
+			log.Printf("rate limited")
+			w.WriteHeader(429)
+			w.Write([]byte("rate limited"))
+			return
+		}
+		lastTimeMutex.Lock()
+		lastTime = now
+		lastTimeMutex.Unlock()
+
 		err := save(imgURL, imgDir, int64(maxImgSize), w, r)
 		if err != nil {
 			log.Printf("save error: %s", err)
