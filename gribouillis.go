@@ -14,6 +14,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/dustin/go-humanize"
 )
 
 // fixImage decode input data as PNG, pad it with white at each borders and
@@ -43,7 +45,9 @@ func fixImage(w io.Writer, r io.Reader, padding int) error {
 
 // save decode posted PNG and save it with a random name into imgDir. It returns
 // a JSON response with the absolute path of the saved image.
-func save(imgURL, imgDir string, w http.ResponseWriter, r *http.Request) error {
+func save(imgURL, imgDir string, maxImgSize int64, w http.ResponseWriter,
+	r *http.Request) error {
+
 	buf := make([]byte, 16)
 	_, err := rand.Read(buf)
 	if err != nil {
@@ -58,7 +62,10 @@ func save(imgURL, imgDir string, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer fp.Close()
 
-	err = fixImage(fp, r.Body, 20)
+	err = fixImage(fp, &io.LimitedReader{
+		R: r.Body,
+		N: int64(maxImgSize),
+	}, 20)
 	if err != nil {
 		return err
 	}
@@ -90,23 +97,28 @@ Use -base-url to set the web server base URL (useful when proxying).
 	}
 	addr := flag.String("http", "localhost:5001", "HTTP host:port")
 	baseURL := flag.String("base-url", "", "web server base URL")
+	maxImgSizeStr := flag.String("max-image-size", "10MB", "maximum image size")
 	flag.Parse()
 	if flag.NArg() != 0 {
 		return fmt.Errorf("no argument expected")
 	}
 	trimmed := strings.TrimRight(*baseURL, "/")
 	baseURL = &trimmed
+	maxImgSize, err := humanize.ParseBytes(*maxImgSizeStr)
+	if err != nil {
+		return err
+	}
 
 	imgDir := "images"
 	imgURL := *baseURL + "/saved/"
-	err := os.MkdirAll(imgDir, 0755)
+	err = os.MkdirAll(imgDir, 0755)
 	if err != nil {
 		return err
 	}
 	http.Handle(imgURL, http.StripPrefix(imgURL,
 		http.FileServer(http.Dir(imgDir))))
 	http.HandleFunc(*baseURL+"/save/", func(w http.ResponseWriter, r *http.Request) {
-		err := save(imgURL, imgDir, w, r)
+		err := save(imgURL, imgDir, int64(maxImgSize), w, r)
 		if err != nil {
 			log.Printf("save error: %s", err)
 			w.WriteHeader(500)
