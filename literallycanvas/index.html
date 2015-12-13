@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <!-- stylesheet -->
+    <link href="css/literallycanvas.css" rel="stylesheet">
+
+    <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <!-- dependency: React.js -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.13.3/react-with-addons.js"></script>
+
+    <!-- Literally Canvas -->
+    <script src="js/literallycanvas.js"></script>
+  </head>
+  <body>
+    <!-- where the widget goes. you can do CSS to it. -->
+    <div class="literally" style="min-height:750px"></div>
+
+    <form class="controls export">
+      <input type="submit" data-action="export-as-png" value="Save">
+    </form>
+
+    <!-- kick it off -->
+    <script>
+        // Look ma, no jQuery!
+        var lc = LC.init(
+            document.getElementsByClassName('literally')[0],
+            {   imageURLPrefix: 'img',
+	        backgroundColor: 'white'
+	    }
+        );
+        $('.controls.export [data-action=export-as-png]').click(function(e) {
+            e.preventDefault();
+            var img = lc.getImage();
+            if (!img) {
+                return
+            }
+            img.toBlob(function(blob) {
+                $.ajax({
+                type: 'POST',
+                    url: 'save/',
+                    data: blob,
+                    processData: false,
+                    contentType: false
+                }).success(function(data) {
+                    rsp = jQuery.parseJSON(data)
+                    console.log(rsp);
+                    window.open(window.location.origin + rsp["path"])
+                });
+            });
+        });
+    </script>
+  </body>
+</html>
+.
