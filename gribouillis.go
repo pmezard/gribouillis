@@ -235,6 +235,7 @@ subpath.
 
 Use -base-url to set the web server base URL (useful when proxying).
 `)
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 	addr := flag.String("http", "localhost:5001", "HTTP host:port")
