@@ -47,7 +47,9 @@
                 });
             });
         });
+        document.addEventListener('keydown', function(e) {
+            if (e.keyCode == 32) lc.undo();
+        });
     </script>
   </body>
 </html>
-.

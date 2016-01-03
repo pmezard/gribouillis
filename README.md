@@ -23,3 +23,7 @@ cd appdir
 ```
 
 And voilà, here it is on port 5000. See --help for more options.
+
+# Bindings
+
+`SPACE` key is bound to undo. I found it convenient to either draw with one hand and undo with the other, or bind it to drawing tablets command keys.
