@@ -297,6 +297,7 @@ Use -base-url to set the web server base URL (useful when proxying).
 	})
 	http.Handle(*baseURL+"/", http.StripPrefix(*baseURL+"/",
 		http.FileServer(http.Dir("literallycanvas"))))
+	log.Printf("starting server on %s", *addr)
 	return http.ListenAndServe(*addr, nil)
 }
 
