@@ -65,7 +65,7 @@ func (s sortedFiles) Swap(i, j int) {
 
 // OpenLimitedDir returns a LimitedDir initialized on supplied directory.
 func OpenLimitedDir(path string, maxSize int64, maxCount int) (*LimitedDir, error) {
-	err := os.MkdirAll(path, 755)
+	err := os.MkdirAll(path, 0755)
 	if err != nil {
 		return nil, err
 	}

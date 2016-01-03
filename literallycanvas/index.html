@@ -14,21 +14,15 @@
     <!-- where the widget goes. you can do CSS to it. -->
     <div class="literally" style="min-height:750px"></div>
 
-    <form class="controls export">
-      <input type="submit" data-action="export-as-png" value="Save">
-    </form>
-
     <!-- kick it off -->
     <script>
-        // Look ma, no jQuery!
         var lc = LC.init(
             document.getElementsByClassName('literally')[0],
             {   imageURLPrefix: 'img',
 	        backgroundColor: 'white'
 	    }
         );
-        $('.controls.export [data-action=export-as-png]').click(function(e) {
-            e.preventDefault();
+        lc.saveCallback = function() {
             var img = lc.getImage();
             if (!img) {
                 return
@@ -46,7 +40,7 @@
                     window.open(window.location.origin + rsp["path"])
                 });
             });
-        });
+        };
         document.addEventListener('keydown', function(e) {
             if (e.keyCode == 32) lc.undo();
         });
